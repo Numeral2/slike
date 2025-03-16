@@ -15,7 +15,7 @@ app.use(cors());
 // Set up multer for handling image uploads
 const upload = multer({ dest: "uploads/" });
 
-// Route to serve index.html (assuming it's in the same folder)
+// Route to serve index.html (assuming it's in the same folder as the script)
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -35,6 +35,7 @@ app.post("/process-image", upload.array("files", 10), async (req, res) => {
   try {
     let extractedText = "";
 
+    // Process each uploaded file with Tesseract
     for (const file of req.files) {
       const result = await Tesseract.recognize(file.path, "eng", {
         logger: (m) => console.log(m),
@@ -42,6 +43,7 @@ app.post("/process-image", upload.array("files", 10), async (req, res) => {
       extractedText += result.data.text + "\n\n";
     }
 
+    // Send back the extracted text as a JSON response
     return res.json({ extracted_text: extractedText });
   } catch (err) {
     console.error("Error processing file:", err);
