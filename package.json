@@ -1,0 +1,22 @@
+{
+  "name": "ivanovcii",
+  "version": "1.0.0",
+  "description": "Express app for OCR processing with Tesseract.js and Make.com integration",
+  "main": "script.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node script.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "multer": "^1.4.3",
+    "tesseract.js": "^2.0.0",
+    "axios": "^0.21.1",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": "14.x"
+  },
+  "author": "",
+  "license": "ISC"
+}
