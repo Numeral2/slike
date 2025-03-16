@@ -1,9 +1,6 @@
-const multer = require("multer");
-const Tesseract = require("tesseract.js");
 const axios = require("axios");
-const formidable = require("formidable"); // Use formidable for parsing form data
-
-const upload = multer({ dest: "/tmp/uploads/" }); // Use /tmp/ for file storage in Vercel
+const formidable = require("formidable");
+const Tesseract = require("tesseract.js");
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
@@ -57,12 +54,23 @@ module.exports = async (req, res) => {
     const makeUrl = "https://hook.eu2.make.com/y94u5xvkf97g5nym3trgz2j2107nuu12"; // Replace with your Make.com webhook URL
 
     try {
+      // Log the body being sent to Make.com
+      console.log("Sending text to Make.com:", body.text);
+
       const response = await axios.post(makeUrl, { text: body.text });
 
-      if (response.data.summary) {
-        return res.json({ summary: response.data.summary });
+      // Log the response status and data
+      console.log("Response Status:", response.status);
+      console.log("Response Data:", response.data);
+
+      if (response.status === 200) {
+        if (response.data.summary) {
+          return res.json({ summary: response.data.summary });
+        } else {
+          return res.status(500).json({ error: "No summary returned from Make.com" });
+        }
       } else {
-        return res.status(500).json({ error: "No summary returned from Make.com" });
+        return res.status(response.status).json({ error: "Unexpected status code from Make.com" });
       }
     } catch (err) {
       console.error("Failed to send to Make.com:", err);
