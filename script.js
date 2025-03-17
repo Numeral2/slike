@@ -1,16 +1,16 @@
+const Tesseract = require("tesseract.js");
 const axios = require("axios");
 const formidable = require("formidable");
-const Tesseract = require("tesseract.js");
+const path = require("path");
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
-    // Serve the index.html file directly from the same folder
-    const path = require("path");
+    // Serve the index.html file
     res.sendFile(path.join(__dirname, "../index.html"));
   } else if (req.method === "POST" && req.url === "/process-image") {
-    // Handle image upload
-    const form = new formidable.IncomingForm(); // Use formidable for parsing file uploads
-    form.uploadDir = "/tmp"; // Vercel only allows writing to /tmp
+    // Handle image upload using formidable
+    const form = new formidable.IncomingForm();
+    form.uploadDir = "/tmp"; // Ensure Vercel compatibility
     form.keepExtensions = true;
 
     form.parse(req, async (err, fields, files) => {
@@ -25,14 +25,16 @@ module.exports = async (req, res) => {
       }
 
       if (filesArray.length > 10) {
-        return res.status(400).json({ error: "You can upload a maximum of 10 images" });
+        return res
+          .status(400)
+          .json({ error: "You can upload a maximum of 10 images" });
       }
 
       try {
         let extractedText = "";
 
         for (const file of filesArray) {
-          const result = await Tesseract.recognize(file.path, "eng", {
+          const result = await Tesseract.recognize(file.filepath, "eng", {
             logger: (m) => console.log(m),
           });
           extractedText += result.data.text + "\n\n";
@@ -45,39 +47,23 @@ module.exports = async (req, res) => {
       }
     });
   } else if (req.method === "POST" && req.url === "/send-to-make") {
-    const body = req.body;
-
-    if (!body.text) {
-      return res.status(400).json({ error: "No text provided" });
-    }
-
-    const makeUrl = "https://hook.eu2.make.com/y94u5xvkf97g5nym3trgz2j2107nuu12"; // Replace with your Make.com webhook URL
-
     try {
-      // Log the body being sent to Make.com
-      console.log("Sending text to Make.com:", body.text);
-
-      const response = await axios.post(makeUrl, { text: body.text });
-
-      // Log the response status and data
-      console.log("Response Status:", response.status);
-      console.log("Response Data:", response.data);
-
-      if (response.status === 200) {
-        if (response.data.summary) {
-          return res.json({ summary: response.data.summary });
-        } else {
-          return res.status(500).json({ error: "No summary returned from Make.com" });
-        }
-      } else {
-        return res.status(response.status).json({ error: "Unexpected status code from Make.com" });
+      const body = req.body;
+      if (!body.text) {
+        return res.status(400).json({ error: "No text provided" });
       }
+
+      const makeUrl =
+        "https://hook.eu2.make.com/y94u5xvkf97g5nym3trgz2j2107nuu12";
+      const response = await axios.post(makeUrl, { text: body.text });
+      return res.json({
+        summary: response.data.summary || "No summary returned",
+      });
     } catch (err) {
       console.error("Failed to send to Make.com:", err);
       return res.status(500).json({ error: "Failed to send to Make.com" });
     }
   } else {
-    res.status(404).send("Not Found");
+    res.status(404).json({ error: "Route not found" });
   }
 };
-
